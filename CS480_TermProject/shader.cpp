@@ -39,106 +39,116 @@ bool Shader::AddShader(GLenum ShaderType)
 
     if (ShaderType == GL_VERTEX_SHADER)
     {
-        s =
-            "#version 460\n"
-            "layout(location = 0) in vec3 v_position;\n"
-            "layout(location = 1) in vec3 v_normal;\n"
-            "layout(location = 2) in vec2 v_tc;\n"
+        s = R"(
 
-            "out vec3 varNorm;\n"
-            "out vec3 varLdir;\n"
-            "out vec3 varPos;\n"
-            "out vec2 tc;\n"
+            #version 460
 
-            "uniform mat4 projectionMatrix;\n"
-            "uniform mat4 viewMatrix;\n"
-            "uniform mat4 modelMatrix;\n"
-            "uniform mat3 normMatrix;\n"
+            layout(location = 0) in vec3 v_position;
+            layout(location = 1) in vec3 v_normal;
+            layout(location = 2) in vec2 v_tc;
 
-            "struct PositionalLight {\n"
-            "  vec4 ambient;\n"
-            "  vec4 diffuse;\n"
-            "  vec4 spec;\n"
-            "  vec3 position;\n"
-            "};\n"
+            out vec3 varNorm;
+            out vec3 varLdir;
+            out vec3 varPos;
+            out vec2 tc;
 
-            "uniform vec4 GlobalAmbient;\n"
-            "uniform PositionalLight light;\n"
+            uniform mat4 projectionMatrix;
+            uniform mat4 viewMatrix;
+            uniform mat4 modelMatrix;
+            uniform mat3 normMatrix;
 
-            "struct Material {\n"
-            "  vec4 ambient;\n"
-            "  vec4 diffuse;\n"
-            "  vec4 spec;\n"
-            "  float shininess;\n"
-            "};\n"
-            "uniform Material material;\n"
+            struct PositionalLight {
+              vec4 ambient;
+              vec4 diffuse;
+              vec4 spec;
+              vec3 position;
+            };
 
-            "void main(void) {\n"
-            "  vec4 v = vec4(v_position, 1.0);\n"
-            "  gl_Position = projectionMatrix * viewMatrix * modelMatrix * v;\n"
-            "  tc = v_tc;\n"
-            "  varPos = (viewMatrix * modelMatrix * v).xyz;\n"
-            "  varLdir = light.position - varPos;\n"
-            "  varNorm = normMatrix * v_normal;\n"
-            "}\n";
+            uniform vec4 GlobalAmbient;
+            uniform PositionalLight light;
+
+            void main()
+            {
+                vec4 worldPos = modelMatrix * vec4(v_position, 1.0);
+                varPos = (viewMatrix * worldPos).xyz;
+
+                vec3 viewLightPos = (viewMatrix * vec4(light.position, 1.0)).xyz;
+                varLdir = normalize(viewLightPos - varPos);
+
+                varNorm = normalize(normMatrix * v_normal);
+                tc = v_tc;
+
+                gl_Position = projectionMatrix * viewMatrix * worldPos;
+            }
+        )";
+      
     }
     else if (ShaderType == GL_FRAGMENT_SHADER)
     {
-        s =
-            "#version 460\n"
-            "in vec3 varNorm;\n"
-            "in vec3 varLdir;\n"
-            "in vec3 varPos;\n"
-            "in vec2 tc;\n"
-            "\n"
-            "uniform sampler2D sp;\n"
-            "uniform sampler2D normalMap;\n"
-            "uniform bool hasTexture;\n"
-            "uniform bool hasNormalMap;\n"
-            "\n"
-            "struct Material {\n"
-            "  vec4 ambient;\n"
-            "  vec4 diffuse;\n"
-            "  vec4 spec;\n"
-            "  float shininess;\n"
-            "};\n"
-            "uniform Material material;\n"
-            "\n"
-            "struct PositionalLight {\n"
-            "  vec4 ambient;\n"
-            "  vec4 diffuse;\n"
-            "  vec4 spec;\n"
-            "  vec3 position;\n"
-            "};\n"
-            "uniform PositionalLight light;\n"
-            "\n"
-            "uniform vec4 GlobalAmbient;\n"
-            "\n"
-            "out vec4 frag_color;\n"
-            "\n"
-            "void main(void)\n"
-            "{\n"
-            "  vec3 L = normalize(varLdir);\n"
-            "  vec3 N;\n"
-            "  if (hasNormalMap)\n"
-            "    N = normalize(varNorm + texture(normalMap, tc).xyz * 2.0 - 1.0);\n"
-            "  else\n"
-            "    N = normalize(varNorm);\n"
-            "\n"
-            "  vec3 V = normalize(-varPos);\n"
-            "  vec3 R = normalize(reflect(-L, N));\n"
-            "\n"
-            "  float cosTheta = max(dot(L, N), 0.0);\n"
-            "  float cosPhi = max(dot(R, V), 0.0);\n"
-            "\n"
-            "  vec3 texColor = hasTexture ? texture(sp, tc).xyz : vec3(1.0);\n"
-            "\n"
-            "  vec3 amb = GlobalAmbient.xyz + (texColor * light.ambient.xyz * material.ambient.xyz);\n"
-            "  vec3 dif = light.diffuse.xyz * material.diffuse.xyz * texColor * cosTheta;\n"
-            "  vec3 spc = light.spec.xyz * material.spec.xyz * pow(cosPhi, material.shininess);\n"
-            "\n"
-            "  frag_color = vec4(amb + dif + spc, 1.0);\n"
-            "}\n";
+            
+           s = R"(
+
+                #version 460
+
+                in vec3 varNorm;
+                in vec3 varLdir;
+                in vec3 varPos;
+                in vec2 tc;
+
+                uniform sampler2D sp;
+                uniform sampler2D normalMap;
+
+                uniform bool hasTexture;
+                uniform bool hasNormalMap;
+
+                struct Material {
+                  vec4 ambient;
+                  vec4 diffuse;
+                  vec4 specular;
+                  float shininess;
+                };
+                uniform Material material;
+
+                struct PositionalLight {
+                  vec4 ambient;
+                  vec4 diffuse;
+                  vec4 spec;
+                  vec3 position;
+                };
+                uniform PositionalLight light;
+
+                uniform vec4 GlobalAmbient;
+
+                out vec4 frag_color;
+
+                void main()
+                {
+                    vec3 N = normalize(varNorm);
+                    vec3 L = normalize(varLdir);
+                    vec3 V = normalize(-varPos);
+                    vec3 R = reflect(-L, N);
+
+                    vec4 baseColor = hasTexture ? texture(sp, tc) : material.diffuse;
+
+                    vec4 ambient = light.ambient * baseColor;
+                    float diff = max(dot(N, L), 0.0);
+                    vec4 diffuse = light.diffuse * baseColor * diff;
+
+                    float spec = pow(max(dot(R, V), 0.0), material.shininess);
+                    vec4 specular = light.spec * material.specular * spec;
+
+             
+                    vec3 gammaCorrected = pow(frag_color.rgb, vec3(1.0 / 2.2));
+                    frag_color = vec4(pow((ambient + diffuse + specular).rgb, vec3(1.0 / 2.2)), 1.0);
+                }
+            )";
+            // changed vec4 ambient: vec4 ambient = light.ambient * material.ambient; 
+           //Added the gammaCorrected above, replaced frag_color with, frag_color = ambient + diffuse + specular;frag_color = ambient + diffuse + specular;
+           //GAMMA CORRECTION: brightens up the screen to help see
+
+
+           //ISSUE there are no shadows
+
     }
 
     GLuint ShaderObj = glCreateShader(ShaderType);

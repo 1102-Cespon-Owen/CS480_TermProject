@@ -21,20 +21,13 @@ Object::Object()
 
 Object::Object(glm::vec3 pivot, const char* fname)
 {
-	// Vertex Set Up
 	setupVerticies();
-	
-	// Model Set Up
 	angle = 0.0f;
 	pivotLocation = pivot;
 	model = glm::translate(glm::mat4(1.0f), pivotLocation);
-
-	// Buffer Set Up
 	if (!InitBuffers()) {
 		printf("Some buffers not initialized.\n");
 	}
-
-	//Load Texture from file
 	m_texture = new Texture();
 	if (m_texture->loadTexture(fname, 0)) {
 		hasTex = true;
@@ -43,24 +36,18 @@ Object::Object(glm::vec3 pivot, const char* fname)
 		hasTex = false;
 		printf("Texture load failed for %s\n", fname);
 	}
-
+	hasNormalTex = false;
 }
 
-Object::Object(glm::vec3 pivot, const char* fname, const char* normalfname) {
-	// Vertex Set Up
-	setupVerticies();
 
-	// Model Set Up
+Object::Object(glm::vec3 pivot, const char* fname, const char* normalfname) {
+	setupVerticies();
 	angle = 0.0f;
 	pivotLocation = pivot;
 	model = glm::translate(glm::mat4(1.0f), pivotLocation);
-
-	// Buffer Set Up
 	if (!InitBuffers()) {
 		printf("Some buffers not initialized.\n");
 	}
-
-	//Load Texture from file
 	m_texture = new Texture();
 	if (m_texture->loadTexture(fname, 0)) {
 		hasTex = true;
@@ -70,8 +57,7 @@ Object::Object(glm::vec3 pivot, const char* fname, const char* normalfname) {
 		hasTex = false;
 		printf("Texture load failed for %s\n", fname);
 	}
-
-	if (m_texture->loadTexture(normalfname, 1)) {
+	if (normalfname && m_texture->loadTexture(normalfname, 1)) {
 		hasNormalTex = true;
 		std::cout << "Normal Texture loaded for " << normalfname << " | ID: " << m_texture->getNormalTextureID() << std::endl;
 	}
@@ -79,7 +65,6 @@ Object::Object(glm::vec3 pivot, const char* fname, const char* normalfname) {
 		hasNormalTex = false;
 		printf("Normal map load failed for %s\n", normalfname);
 	}
-
 }
 
 
@@ -100,69 +85,61 @@ glm::mat4 Object::GetModel()
 	return model;
 }
 
-void Object::Render(GLint posAttribLoc, GLint colAttribLoc)
-{
-
+void Object::Render(GLint posAttribLoc, GLint normAttribLoc, GLint tcAttribLoc, GLint hasTextureLoc, GLint hasNormalMapLoc) {
 	glBindVertexArray(vao);
 
-	// Enable vertex attibute arrays for each vertex attrib
 	glEnableVertexAttribArray(posAttribLoc);
-	glEnableVertexAttribArray(colAttribLoc);
+	glEnableVertexAttribArray(normAttribLoc);
+	glEnableVertexAttribArray(tcAttribLoc);
 
-	// Bind your VBO
 	glBindBuffer(GL_ARRAY_BUFFER, VB);
+	glVertexAttribPointer(posAttribLoc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
+	glVertexAttribPointer(normAttribLoc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+	glVertexAttribPointer(tcAttribLoc, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texcoord));
 
-	// Set vertex attribute pointers to the load correct data
-	glVertexAttribPointer(posAttribLoc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
-	glVertexAttribPointer(colAttribLoc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
-
-
-	// Bind your Element Array
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IB);
-
-	//If has texture, set up texture unit(s)
 	if (m_texture != NULL) {
 		GLuint texID = m_texture->getTextureID();
-		glUniform1i(hasTex, texID > 0);
+		glUniform1i(hasTextureLoc, texID > 0);
 		if (texID > 0) {
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, texID);
 		}
 
 		GLuint normID = m_texture->getNormalTextureID();
-		glUniform1i(hasNormalTex, normID > 0);
+		glUniform1i(hasNormalMapLoc, normID > 0);
 		if (normID > 0) {
 			glActiveTexture(GL_TEXTURE1);
 			glBindTexture(GL_TEXTURE_2D, normID);
 		}
 	}
+	else {
+		glUniform1i(hasTextureLoc, 0);
+		glUniform1i(hasNormalMapLoc, 0);
+	}
 
-
-	// Render
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IB);
 	glDrawElements(GL_TRIANGLES, Indices.size(), GL_UNSIGNED_INT, 0);
 
-	// Disable vertex arrays
 	glDisableVertexAttribArray(posAttribLoc);
-	glDisableVertexAttribArray(colAttribLoc);
+	glDisableVertexAttribArray(normAttribLoc);
+	glDisableVertexAttribArray(tcAttribLoc);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
 }
 
 
 bool Object::InitBuffers() {
-
-	// For OpenGL 3
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
-
 	glGenBuffers(1, &VB);
 	glBindBuffer(GL_ARRAY_BUFFER, VB);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * Vertices.size(), &Vertices[0], GL_STATIC_DRAW);
-
 	glGenBuffers(1, &IB);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IB);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * Indices.size(), &Indices[0], GL_STATIC_DRAW);
-
 	return true;
 }
+
 
 void Object::setupVerticies() {
 	Vertices = {

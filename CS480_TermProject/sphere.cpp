@@ -124,23 +124,13 @@ void Sphere::Render(GLint posAttribLoc, GLint normAttribLoc, GLint tcAttribLoc, 
 
     // If has texture, set up texture unit(s): update here for texture rendering
     if (m_texture != NULL) {
-        glUniform1i(hasTextureLoc, true);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, m_texture->getTextureID());
 
         if (m_texture->getNormalTextureID() != 0) {
-            glUniform1i(hasNormalMapLoc, true);
             glActiveTexture(GL_TEXTURE1);
             glBindTexture(GL_TEXTURE_2D, m_texture->getNormalTextureID());
         }
-        else {
-            glUniform1i(hasNormalMapLoc, false);
-        }
-    }
-    else {  
-        glUniform1i(hasTextureLoc, false);
-        glUniform1i(hasNormalMapLoc, false);
-
     }
 
     // Bind your Element Array

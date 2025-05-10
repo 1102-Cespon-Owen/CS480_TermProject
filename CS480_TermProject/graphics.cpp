@@ -82,21 +82,34 @@ bool Graphics::Initialize(int width, int height)
 	}
 
 	//Sky Box (SPACE)
-	//m_space = new Sphere(256, "Cubemaps/Galaxy2.jpg", NULL); 
+	m_space = new Sphere(128, "Cubemaps/Galaxy2.jpg", NULL); 
+	m_spaceMat = {
+		glm::vec4(0.1, 0.1, 0.1, 1.0), // ambient
+		glm::vec4(0.1, 0.1, 0.1, 1.0), // diffuse
+		glm::vec4(0.1, 0.1, 0.1, 1.0), // specular
+		16.0f
+	};
 
 	//Starship
 	//m_ship = new Mesh(glm::vec3(2.0f, 3.0f, -5.0f), "assets/SpaceShip-1.obj", "assets/SpaceShip-1.png");
 
 	// The Sun
 	m_sun = new Sphere(64, "Planetary_Textures/2k_sun.jpg", NULL);
+	m_sunMat = {
+	glm::vec4(0.6, 0.5, 0.1, 1.0), // ambient
+	glm::vec4(1.0, 0.9, 0.3, 1.0), // diffuse
+	glm::vec4(1.0, 1.0, 0.8, 1.0), // specular
+	16.0f
+	};
+
 
 	// The Earth
 	m_earth = new Sphere(48, "Planetary_Textures/2k_earth_daymap.jpg", "Planetary_Textures/2k_earth_daymap-n.jpg");
-	Material earthMat = {
-	glm::vec4(0.2, 0.2, 0.2, 1.0),
+	m_earthMat = {
+	glm::vec4(0.3, 0.3, 0.3, 1.0),
 	glm::vec4(1.0, 1.0, 1.0, 1.0),
 	glm::vec4(1.0, 1.0, 1.0, 1.0),
-	20.0f
+	32.0f
 	};
 
 	// The moon
@@ -115,13 +128,11 @@ void Graphics::HierarchicalUpdate2(double dt) {
 	glm::mat4 tmat, rmat, smat, localTransform;
 	
 	// === SKY SPHERE ===
-	/*
 	modelStack.push(glm::translate(glm::mat4(1.f), glm::vec3(0, 0, 0)));  // Sun at origin
 	localTransform = modelStack.top();
 	localTransform *= glm::scale(glm::vec3(50.f));
 	if (m_space) m_space->Update(localTransform);
 	modelStack.pop();  // return to empty
-	*/
 
 
 	// === SUN ===
@@ -265,6 +276,9 @@ void Graphics::Render()
 	//glProgramUniform3fv(m_shader->GetShaderProgram(), lightPloc, 1, glm::value_ptr(m_light->getLightPositionViewSpace()));
     glUniform3fv(m_shader->GetUniformLocation("light.position"), 1, glm::value_ptr(m_light->getLightPositionViewSpace()));
 
+	//glm::vec3 lightViewPos = glm::vec3(viewMatrix * glm::vec4(worldLightPos, 1.0));
+	//glUniform3fv(glGetUniformLocation(shaderID, "light.position"), 1, glm::value_ptr(lightViewPos));
+
 
 	//////////////////////////////////////////////
 
@@ -313,7 +327,7 @@ void Graphics::Render()
 	
 	*/
 
-	/*
+	
 	if (m_space != NULL) {
 
 		glUniformMatrix3fv(m_normalMatrix, 1, GL_FALSE, glm::value_ptr(glm::transpose(glm::inverse(glm::mat3(m_camera->GetView() * m_space->GetModel())))));
@@ -322,21 +336,26 @@ void Graphics::Render()
 		if (m_space->hasTex) {
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, m_space->getTextureID());
-
-			GLuint sampler = m_shader->GetUniformLocation("sp");
-			if (sampler == INVALID_UNIFORM_LOCATION) {
-				printf("Sampler not found\n");
-			}
-			glUniform1i(sampler, 0);  // texture unit 0
-			glUniform1i(m_hasTexture, true);
+			glUniform1i(m_shader->GetUniformLocation("sp"), 0);
+			glUniform1i(m_shader->GetUniformLocation("hasTexture"), 1);
 		}
 		else {
-			glUniform1i(m_hasTexture, false);
+			glUniform1i(m_shader->GetUniformLocation("hasTexture"), 0);
 		}
-		glUniform1i(m_hasNormalMap, false);
+
+		if (m_space->hasNormalTex) {
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, m_space->getNormalTextureID());
+			glUniform1i(m_shader->GetUniformLocation("normalMap"), 1);
+			glUniform1i(m_shader->GetUniformLocation("hasNormalMap"), 1);
+		}
+		else {
+			glUniform1i(m_shader->GetUniformLocation("hasNormalMap"), 0);
+		}
+
+		SetMaterial(m_spaceMat);
 		m_space->Render(m_positionAttrib, m_normalAttrib, m_tcAttrib, m_hasTexture, m_hasNormalMap);
 	}
-	*/
 
 	if (m_sun != NULL) {
 
@@ -362,7 +381,7 @@ void Graphics::Render()
 		else {
 			glUniform1i(m_shader->GetUniformLocation("hasNormalMap"), 0);
 		}
-
+		SetMaterial(m_sunMat);
 
 		m_sun->Render(m_positionAttrib, m_normalAttrib, m_tcAttrib, m_hasTexture, m_hasNormalMap);
 	}
@@ -377,7 +396,7 @@ void Graphics::Render()
 
 
 		//Material for EARTH
-		SetMaterial(m_earth->getMaterial());
+		//SetMaterial(m_earth->getMaterial());
 
 		if (m_earth->hasTex) {
 			glActiveTexture(GL_TEXTURE0);
@@ -404,6 +423,8 @@ void Graphics::Render()
 		else {
 			glUniform1i(m_hasNormalMap, false);
 		}
+		//SetMaterial(m_earth->getMaterial());
+		SetMaterial(m_earthMat);
 
 		m_earth->Render(m_positionAttrib, m_normalAttrib, m_tcAttrib, m_hasTexture, m_hasNormalMap);
 	}
@@ -593,7 +614,7 @@ std::string Graphics::ErrorString(GLenum error)
 void Graphics::SetMaterial(const Material& mat) {
 	GLint mAmbLoc = m_shader->GetUniformLocation("material.ambient");
 	GLint mDiffLoc = m_shader->GetUniformLocation("material.diffuse");
-	GLint mSpecLoc = m_shader->GetUniformLocation("material.spec");
+	GLint mSpecLoc = m_shader->GetUniformLocation("material.specular");
 	GLint mShineLoc = m_shader->GetUniformLocation("material.shininess");
 
 	glUniform4fv(mAmbLoc, 1, glm::value_ptr(mat.ambient));

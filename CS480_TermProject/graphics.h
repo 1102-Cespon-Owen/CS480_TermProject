@@ -70,11 +70,13 @@ class Graphics
 
     //SKY SPHERE(SPACE)
     Sphere* m_space; 
+	Material m_spaceMat;
 
     // SOLAR BODIES
 
     //SUN
     Sphere* m_sun;
+	Material m_sunMat;
 
     //MERCURY
 
@@ -82,6 +84,7 @@ class Graphics
 
 	//EARTH SYSTEM
     Sphere* m_earth;
+	Material m_earthMat;
     Sphere* m_moon;
 
 	//MARS

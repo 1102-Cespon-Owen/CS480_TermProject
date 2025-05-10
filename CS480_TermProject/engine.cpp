@@ -151,7 +151,7 @@ void Engine::cursorPositionCallBack(GLFWwindow* window, double xpos, double ypos
     }
 
     float xoffset = xpos - instance->lastX;;
-    float yoffset = ypos - instance->lastY;
+    float yoffset = instance->lastY - ypos;
     instance->lastX = xpos;
     instance->lastY = ypos;
 
