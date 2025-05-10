@@ -82,13 +82,13 @@ bool Graphics::Initialize(int width, int height)
 	}
 
 	//Sky Box (SPACE)
-	m_space = new Sphere(128, "Cubemaps/Galaxy2.jpg", NULL); 
+	/*m_space = new Sphere(128, "Cubemaps/Galaxy2.jpg", NULL);
 	m_spaceMat = {
 		glm::vec4(0.1, 0.1, 0.1, 1.0), // ambient
 		glm::vec4(0.1, 0.1, 0.1, 1.0), // diffuse
 		glm::vec4(0.1, 0.1, 0.1, 1.0), // specular
 		16.0f
-	};
+	};*/
 
 	//Starship
 	//m_ship = new Mesh(glm::vec3(2.0f, 3.0f, -5.0f), "assets/SpaceShip-1.obj", "assets/SpaceShip-1.png");
@@ -128,11 +128,11 @@ void Graphics::HierarchicalUpdate2(double dt) {
 	glm::mat4 tmat, rmat, smat, localTransform;
 	
 	// === SKY SPHERE ===
-	modelStack.push(glm::translate(glm::mat4(1.f), glm::vec3(0, 0, 0)));  // Sun at origin
+	/*modelStack.push(glm::translate(glm::mat4(1.f), glm::vec3(0, 0, 0)));  // Sun at origin
 	localTransform = modelStack.top();
 	localTransform *= glm::scale(glm::vec3(50.f));
 	if (m_space) m_space->Update(localTransform);
-	modelStack.pop();  // return to empty
+	modelStack.pop();  // return to empty*/
 
 
 	// === SUN ===
@@ -228,8 +228,13 @@ void Graphics::Render()
 
 	///////////// NEW FOR LIGHT /////////////////////////////
 	// Update light position in view space
-	m_light->UpdateViewSpacePosition(m_camera->GetView());
+	//m_light->UpdateViewSpacePosition(m_camera->GetView());
 
+	//Create checks for these
+	glUniform3fv(m_shader->GetUniformLocation("viewPos"), 1, glm::value_ptr(m_camera->getPos()));
+	glUniform3fv(m_shader->GetUniformLocation("lightColor"), 1, glm::value_ptr(glm::vec3(1.0f)));
+	glUniform3fv(m_shader->GetUniformLocation("lightPos"), 1, glm::value_ptr(glm::vec3(0.0f)));
+	
 	//getting location and sending to light object
 	GLuint globalAmbLoc = glGetUniformLocation(m_shader->GetShaderProgram(), "GlobalAmbient");
 	if (globalAmbLoc == INVALID_UNIFORM_LOCATION)

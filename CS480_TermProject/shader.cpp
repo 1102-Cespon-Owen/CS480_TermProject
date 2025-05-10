@@ -41,14 +41,14 @@ bool Shader::AddShader(GLenum ShaderType)
     {
         s = R"(
 
-            #version 460
+            #version 450
 
             layout(location = 0) in vec3 v_position;
             layout(location = 1) in vec3 v_normal;
             layout(location = 2) in vec2 v_tc;
 
             out vec3 varNorm;
-            out vec3 varLdir;
+
             out vec3 varPos;
             out vec2 tc;
 
@@ -69,16 +69,11 @@ bool Shader::AddShader(GLenum ShaderType)
 
             void main()
             {
-                vec4 worldPos = modelMatrix * vec4(v_position, 1.0);
-                varPos = (viewMatrix * worldPos).xyz;
-
-                vec3 viewLightPos = (viewMatrix * vec4(light.position, 1.0)).xyz;
-                varLdir = normalize(viewLightPos - varPos);
-
-                varNorm = normalize(normMatrix * v_normal);
+                varPos = vec3(modelMatrix * vec4(v_position, 1.0));
+                varNorm = mat3(transpose(inverse(modelMatrix))) * v_normal;
                 tc = v_tc;
 
-                gl_Position = projectionMatrix * viewMatrix * worldPos;
+                gl_Position = projectionMatrix * viewMatrix * vec4(varPos, 1.0);
             }
         )";
       
@@ -88,10 +83,9 @@ bool Shader::AddShader(GLenum ShaderType)
             
            s = R"(
 
-                #version 460
+                #version 450
 
                 in vec3 varNorm;
-                in vec3 varLdir;
                 in vec3 varPos;
                 in vec2 tc;
 
@@ -116,6 +110,10 @@ bool Shader::AddShader(GLenum ShaderType)
                   vec3 position;
                 };
                 uniform PositionalLight light;
+                
+                uniform vec3 viewPos;
+                uniform vec3 lightColor;
+                uniform vec3 lightPos;
 
                 uniform vec4 GlobalAmbient;
 
@@ -123,23 +121,24 @@ bool Shader::AddShader(GLenum ShaderType)
 
                 void main()
                 {
-                    vec3 N = normalize(varNorm);
-                    vec3 L = normalize(varLdir);
-                    vec3 V = normalize(-varPos);
-                    vec3 R = reflect(-L, N);
 
-                    vec4 baseColor = hasTexture ? texture(sp, tc) : material.diffuse;
 
-                    vec4 ambient = light.ambient * baseColor;
-                    float diff = max(dot(N, L), 0.0);
-                    vec4 diffuse = light.diffuse * baseColor * diff;
+                    vec3 normal = normalize(varNorm);
+                    vec3 lightDir = normalize(lightPos - varPos);
+                    vec3 viewDir = normalize(viewPos - varPos);
+                    vec3 reflectDir = reflect(-lightDir, normal);
 
-                    float spec = pow(max(dot(R, V), 0.0), material.shininess);
-                    vec4 specular = light.spec * material.specular * spec;
+                    vec4 ambient = material.ambient * vec4(lightColor, 1.0);
 
-             
-                    vec3 gammaCorrected = pow(frag_color.rgb, vec3(1.0 / 2.2));
-                    frag_color = vec4(pow((ambient + diffuse + specular).rgb, vec3(1.0 / 2.2)), 1.0);
+                    float diff = max(dot(normal, lightDir), 0.0);
+                    vec4 diffuse = material.diffuse * diff * vec4(lightColor, 1.0);
+
+                    float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
+                    vec4 specular = material.specular * spec * vec4(lightColor, 1.0);
+
+                    vec4 texColor = texture(sp, tc);
+
+                    frag_color = (ambient + diffuse + specular) * texColor;
                 }
             )";
             // changed vec4 ambient: vec4 ambient = light.ambient * material.ambient; 

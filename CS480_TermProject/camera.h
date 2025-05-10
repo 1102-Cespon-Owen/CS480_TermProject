@@ -13,6 +13,7 @@ public:
     bool Initialize(int w, int h);
     glm::mat4 GetProjection();
     glm::mat4 GetView();
+    glm::vec3 getPos() { return camPos; }
 
     void MoveRight();
     void MoveLeft();
