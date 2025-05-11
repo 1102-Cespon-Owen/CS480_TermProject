@@ -12,6 +12,8 @@ using namespace std;
 #include "sphere.h"
 #include "mesh.h"
 #include "light.h"
+#include "user.h"
+
 
 #define numVBOs 2;
 #define numIBs 2;
@@ -26,8 +28,10 @@ class Graphics
     void HierarchicalUpdate2(double dt);
     void Render();
 
-    Camera* getCamera() { return m_camera; }
+ 
     void SetMaterial(const Material& mat);
+    User* getUser() { return m_user; }
+
 
 
   private:
@@ -40,7 +44,7 @@ class Graphics
 
     stack<glm::mat4> modelStack;
 
-    Camera *m_camera;
+    //Camera *m_camera;
     Shader *m_shader;
 
     GLint m_projectionMatrix;
@@ -52,18 +56,6 @@ class Graphics
     GLint m_tcAttrib;
     GLint m_hasTexture;
     GLint m_hasNormalMap;
-
-
-    // PROLLY NO NEED
-    /*
-	GLint m_lightAmbient;
-	GLint m_lightDiffuse;
-	GLint m_lightSpecular;
-	GLint m_lightPosition;
-	GLint m_globalAmbient;
-	GLint m_lightPositionViewSpace;
-    */
-
 
     //LIGHTING OBJECT
     Light* m_light;
@@ -102,6 +94,9 @@ class Graphics
     //STARSHIP
     Mesh* m_ship;
 
+
+    //NEW
+	User* m_user;
 
 
 };

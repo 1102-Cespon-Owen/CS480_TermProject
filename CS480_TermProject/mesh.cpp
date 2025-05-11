@@ -103,45 +103,52 @@ void Mesh::Render(GLint posAttribLoc, GLint colAttribLoc)
 	glDisableVertexAttribArray(colAttribLoc);
 }
 
-void Mesh::Render(GLint posAttribLoc, GLint colAttribLoc, GLint tcAttribLoc, GLint hasTextureLoc)
+void Mesh::Render(GLint posAttribLoc, GLint normAttribLoc, GLint tcAttribLoc, GLint hasTextureLoc, GLint hasNormalMapLoc)
 {
 	glBindVertexArray(vao);
-	// Enable vertex attibute arrays for each vertex attrib
+
+	// Enable vertex attribute arrays
 	glEnableVertexAttribArray(posAttribLoc);
-	glEnableVertexAttribArray(colAttribLoc);
+	glEnableVertexAttribArray(normAttribLoc);
 	glEnableVertexAttribArray(tcAttribLoc);
 
-	// Bind your VBO
 	glBindBuffer(GL_ARRAY_BUFFER, VB);
 
-	// Set vertex attribute pointers to the load correct data
+	// Set attribute pointers to match the Vertex struct
 	glVertexAttribPointer(posAttribLoc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
-	glVertexAttribPointer(colAttribLoc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+	glVertexAttribPointer(normAttribLoc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
 	glVertexAttribPointer(tcAttribLoc, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texcoord));
 
-	// If has texture, set up texture unit(s) Update here to activate and assign texture unit
-	if (m_texture != NULL) {
-		glUniform1i(hasTextureLoc, true); 
+	// Bind textures
+	if (m_texture != nullptr) {
+		glUniform1i(hasTextureLoc, true);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, m_texture->getTextureID());
 	}
-	else
+	else {
 		glUniform1i(hasTextureLoc, false);
+	}
 
+	if (m_texture != nullptr && m_texture->getNormalTextureID() != 0) {
+		glUniform1i(hasNormalMapLoc, true);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, m_texture->getNormalTextureID());
+	}
+	else {
+		glUniform1i(hasNormalMapLoc, false);
+	}
 
-	// Bind your Element Array
+	// Draw call
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IB);
-
-	// Render
 	glDrawElements(GL_TRIANGLES, Indices.size(), GL_UNSIGNED_INT, 0);
 
-	// Disable vertex arrays
+	// Cleanup
 	glDisableVertexAttribArray(posAttribLoc);
-	glDisableVertexAttribArray(colAttribLoc);
+	glDisableVertexAttribArray(normAttribLoc);
 	glDisableVertexAttribArray(tcAttribLoc);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
 }
-
 
 bool Mesh::InitBuffers() {
 

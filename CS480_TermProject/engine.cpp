@@ -64,11 +64,20 @@ void Engine::Run()
 {
     m_running = true;
 
+    lastFrameTime = glfwGetTime();
 
     while (!glfwWindowShouldClose(m_window->getWindow()))
     {
-        //Update camera delta time
-        m_graphics->getCamera()->Update();
+        // Update camera based on current mode
+        m_graphics->getUser()->UpdateDT();
+        m_graphics->getUser()->updateModel();
+
+        // NEW
+        float currentFrameTime = glfwGetTime();
+        deltaTime = currentFrameTime - lastFrameTime;
+        lastFrameTime = currentFrameTime;
+		//
+
 
         ProcessInput();
         Display(m_window->getWindow(), glfwGetTime());
@@ -83,11 +92,36 @@ void Engine::Run()
 void Engine::ProcessInput()
 {
 
-    if (glfwGetKey(m_window->getWindow(), GLFW_KEY_ESCAPE) == GLFW_PRESS)
-    {
-        glfwSetWindowShouldClose(m_window->getWindow(), true);
-    }
+    GLFWwindow* window = m_window->getWindow();
+    User* user = m_graphics->getUser(); // user is accessed via Graphics
+    float dt = getDeltaTime();
 
+    // Exit
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, true);
+
+    // Mode toggle (C)
+    if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS)
+        user->ToggleCameraMode();
+
+    // Forward WASD, T keys to Scene
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+		user->Accelerate();
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+		user->Brake();
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+		user->YawLeft();
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		user->YawRight();
+    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+		user->RollRight();
+    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+		user->RollLeft();
+	if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS)
+		user->Stop();
+
+
+    /*
     // Move camera based on WASD input
     if (glfwGetKey(m_window->getWindow(), GLFW_KEY_W) == GLFW_PRESS)
     {
@@ -108,6 +142,7 @@ void Engine::ProcessInput()
         m_graphics->getCamera()->MoveRight();
 
     }
+    */
 
 }
 
@@ -135,7 +170,7 @@ long long Engine::GetCurrentTimeMillis()
 
 void Engine::Display(GLFWwindow* window, double time) {
 
-
+    m_graphics->getUser()->updateModel();
     m_graphics->Render();
     m_window->Swap();
 
@@ -159,12 +194,14 @@ void Engine::cursorPositionCallBack(GLFWwindow* window, double xpos, double ypos
     xoffset *= sensitivity;
     yoffset *= sensitivity;
 
-    instance->m_graphics->getCamera()->ProcessMouseMovement(xoffset, yoffset);
+    //instance->m_graphics->getCamera()->ProcessMouseMovement(xoffset, yoffset);
+    instance->m_graphics->getUser()->ProcessMouseMovement(xoffset, yoffset);
+
 }
 
 
 void Engine::scrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
     if (Engine::instance && Engine::instance->m_graphics) {
-        Engine::instance->m_graphics->getCamera()->ProcessMouseScroll((float)yoffset);
+        Engine::instance->m_graphics->getUser()->ProcessMouseScroll((float)yoffset);
     }
 }

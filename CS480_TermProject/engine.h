@@ -19,6 +19,9 @@ public:
     long long GetCurrentTimeMillis();
     void Display(GLFWwindow*, double);
 
+    //NEW
+    float getDeltaTime() const { return deltaTime; }
+
 
 private:
     // Window related variables
@@ -41,6 +44,10 @@ private:
     static void cursorPositionCallBack(GLFWwindow* window, double xpos, double ypos);
     static void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
     static Engine* instance;  // Needed for static callback
+
+    //NEW
+    float deltaTime = 0.0f;
+    float lastFrameTime = 0.0f;
 };
 
 #endif // ENGINE_H

@@ -32,14 +32,10 @@ bool Graphics::Initialize(int width, int height)
 #endif
 
 
+	//Create USER
+	m_user = new User();
 
-	// Init Camera
-	m_camera = new Camera();
-	if (!m_camera->Initialize(width, height))
-	{
-		printf("Camera Failed to Initialize\n");
-		return false;
-	}
+
 
 	// Set up the shaders
 	m_shader = new Shader();
@@ -75,23 +71,24 @@ bool Graphics::Initialize(int width, int height)
 		printf("Some shader attribs not located!\n");
 	}
 
-	m_light = new Light(m_camera->GetView());
+	m_light = new Light(m_user->getExpCamera()->GetView());
 	if (m_light == NULL) {
 		printf("Light failed to initialize\n");
 		return false;
 	}
 
 	//Sky Box (SPACE)
-	/*m_space = new Sphere(128, "Cubemaps/Galaxy2.jpg", NULL);
+	m_space = new Sphere(128, "Cubemaps/Galaxy2.jpg", NULL);
 	m_spaceMat = {
 		glm::vec4(0.1, 0.1, 0.1, 1.0), // ambient
 		glm::vec4(0.1, 0.1, 0.1, 1.0), // diffuse
 		glm::vec4(0.1, 0.1, 0.1, 1.0), // specular
 		16.0f
-	};*/
+	};
+
 
 	//Starship
-	//m_ship = new Mesh(glm::vec3(2.0f, 3.0f, -5.0f), "assets/SpaceShip-1.obj", "assets/SpaceShip-1.png");
+	m_ship = new Mesh(glm::vec3(2.0f, 3.0f, -5.0f), "assets/SpaceShip-1.obj", "assets/SpaceShip-1.png");
 
 	// The Sun
 	m_sun = new Sphere(64, "Planetary_Textures/2k_sun.jpg", NULL);
@@ -128,11 +125,11 @@ void Graphics::HierarchicalUpdate2(double dt) {
 	glm::mat4 tmat, rmat, smat, localTransform;
 	
 	// === SKY SPHERE ===
-	/*modelStack.push(glm::translate(glm::mat4(1.f), glm::vec3(0, 0, 0)));  // Sun at origin
+	modelStack.push(glm::translate(glm::mat4(1.f), glm::vec3(0, 0, 0)));  // Sun at origin
 	localTransform = modelStack.top();
-	localTransform *= glm::scale(glm::vec3(50.f));
+	localTransform *= glm::scale(glm::vec3(70.f));
 	if (m_space) m_space->Update(localTransform);
-	modelStack.pop();  // return to empty*/
+	modelStack.pop();  // return to empty
 
 
 	// === SUN ===
@@ -199,6 +196,9 @@ void Graphics::HierarchicalUpdate2(double dt) {
 	modelStack.pop();  // return to sun
 	
 	modelStack.pop(); // empty stack
+
+	m_user->UpdateDT();
+	m_user->MoveForward();
 }
 
 
@@ -212,258 +212,162 @@ void Graphics::ComputeTransforms(double dt, std::vector<float> speed, std::vecto
 	smat = glm::scale(glm::vec3(scale[0], scale[1], scale[2]));
 }
 
+
 void Graphics::Render()
 {
-	//clear the screen
+	// Clear the screen
 	glClearColor(0.5, 0.2, 0.2, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	// Start the correct program
+	// Enable shader
 	m_shader->Enable();
 
-	// Send in the projection and view to the shader (stay the same while camera intrinsic(perspective) and extrinsic (view) parameters are the same
-	glUniformMatrix4fv(m_projectionMatrix, 1, GL_FALSE, glm::value_ptr(m_camera->GetProjection()));
-	glUniformMatrix4fv(m_viewMatrix, 1, GL_FALSE, glm::value_ptr(m_camera->GetView()));
+	// === Select current camera based on mode ===
+	Camera* cam = (m_user->getCameraMode() == EXPLORATION)
+		? m_user->getExpCamera()
+		: m_user->getObsCamera();
 
+	// === Force view matrix update using LookAt and correct up vector ===
+	if (m_user->getCameraMode() == EXPLORATION)
+	{
+		glm::vec3 shipPos = glm::vec3(m_user->getModel()[3]);
+		cam->LookAt(shipPos);  // Rebuilds view using camUp set earlier in updateModel()
+	}
 
-	///////////// NEW FOR LIGHT /////////////////////////////
-	// Update light position in view space
-	//m_light->UpdateViewSpacePosition(m_camera->GetView());
+	// === Upload projection and view matrices to shader ===
+	glUniformMatrix4fv(m_projectionMatrix, 1, GL_FALSE, glm::value_ptr(cam->GetProjection()));
+	glUniformMatrix4fv(m_viewMatrix, 1, GL_FALSE, glm::value_ptr(cam->GetView()));
 
-	//Create checks for these
-	glUniform3fv(m_shader->GetUniformLocation("viewPos"), 1, glm::value_ptr(m_camera->getPos()));
+	// === Set lighting camera position ===
+	glUniform3fv(m_shader->GetUniformLocation("viewPos"), 1, glm::value_ptr(cam->getPos()));
 	glUniform3fv(m_shader->GetUniformLocation("lightColor"), 1, glm::value_ptr(glm::vec3(1.0f)));
 	glUniform3fv(m_shader->GetUniformLocation("lightPos"), 1, glm::value_ptr(glm::vec3(0.0f)));
-	
-	//getting location and sending to light object
-	GLuint globalAmbLoc = glGetUniformLocation(m_shader->GetShaderProgram(), "GlobalAmbient");
-	if (globalAmbLoc == INVALID_UNIFORM_LOCATION)
+
+	// === Set light uniforms ===
+	glUniform4fv(m_shader->GetUniformLocation("GlobalAmbient"), 1, glm::value_ptr(m_light->getGlobalAmbient()));
+	glUniform4fv(m_shader->GetUniformLocation("light.ambient"), 1, glm::value_ptr(m_light->getLightAmbient()));
+	glUniform4fv(m_shader->GetUniformLocation("light.diffuse"), 1, glm::value_ptr(m_light->getLightDiffuse()));
+	glUniform4fv(m_shader->GetUniformLocation("light.spec"), 1, glm::value_ptr(m_light->getLightSpecular()));
+	glUniform3fv(m_shader->GetUniformLocation("light.position"), 1, glm::value_ptr(m_light->getLightPositionViewSpace()));
+
+	// === Render ship ===
+	if (m_user->getMesh())
 	{
-		printf("GlobalAmbient not found\n");
-	}
-	else {
-		glUniform4fv(m_shader->GetUniformLocation("GlobalAmbient"), 1, glm::value_ptr(m_light->getGlobalAmbient()));
-	}
+		glUniformMatrix4fv(m_modelMatrix, 1, GL_FALSE, glm::value_ptr(m_user->getMesh()->GetModel()));
 
-
-	GLuint lightAloc = glGetUniformLocation(m_shader->GetShaderProgram(), "light.ambient");
-	if (lightAloc == INVALID_UNIFORM_LOCATION)
-	{
-		printf("lightAmbient not found\n");
-	}
-	else {
-		glUniform4fv(m_shader->GetUniformLocation("light.ambient"), 1, glm::value_ptr(m_light->getLightAmbient()));
-	}
-
-	GLuint lightDloc = glGetUniformLocation(m_shader->GetShaderProgram(), "light.diffuse");
-	if (lightDloc == INVALID_UNIFORM_LOCATION)
-	{
-		printf("lightDiffuse not found\n");
-	}
-	else {
-		//glProgramUniform4fv(m_shader->GetShaderProgram(), lightDloc, 1, glm::value_ptr(m_light->getLightDiffuse()));
-		glUniform4fv(m_shader->GetUniformLocation("light.diffuse"), 1, glm::value_ptr(m_light->getLightDiffuse()));
-
-	}
-
-	GLuint lightSloc = glGetUniformLocation(m_shader->GetShaderProgram(), "light.spec");
-	if (lightSloc == INVALID_UNIFORM_LOCATION)
-	{
-		printf("lightSpecular not found\n");
-	}
-	else {
-		//glProgramUniform4fv(m_shader->GetShaderProgram(), lightSloc, 1, glm::value_ptr(m_light->getLightSpecular()));
-		glUniform4fv(m_shader->GetUniformLocation("light.spec"), 1, glm::value_ptr(m_light->getLightSpecular()));
-
-	}
-
-	GLuint lightPloc = glGetUniformLocation(m_shader->GetShaderProgram(), "light.position");
-	//glProgramUniform3fv(m_shader->GetShaderProgram(), lightPloc, 1, glm::value_ptr(m_light->getLightPositionViewSpace()));
-    glUniform3fv(m_shader->GetUniformLocation("light.position"), 1, glm::value_ptr(m_light->getLightPositionViewSpace()));
-
-	//glm::vec3 lightViewPos = glm::vec3(viewMatrix * glm::vec4(worldLightPos, 1.0));
-	//glUniform3fv(glGetUniformLocation(shaderID, "light.position"), 1, glm::value_ptr(lightViewPos));
-
-
-	//////////////////////////////////////////////
-
-
-	//////// TEST MATERIAL ///////////////
-	/*
-	float matAmbient[] = { 0.2, 0.2, 0.2, 1.0 };
-	float matDiffuse[] = { 1.0, 0.1, 0.1, 1.0 };
-	float matSpec[] = { 1.0, 1.0, 1.0, 1.0 };
-	float matShininess = 20.0f;
-
-	GLuint mAmbLoc = m_shader->GetUniformLocation("material.ambient");
-	glUniform4fv(mAmbLoc, 1, matAmbient);
-
-	GLuint mDiffLoc = m_shader->GetUniformLocation("material.diffuse");
-	glUniform4fv(mDiffLoc, 1, matDiffuse);
-
-	GLuint mSpecLoc = m_shader->GetUniformLocation("material.spec");
-	glUniform4fv(mSpecLoc, 1, matSpec);
-
-	GLuint mShineLoc = m_shader->GetUniformLocation("material.shininess");
-	glUniform1f(mShineLoc, matShininess);
-	*/
-	///////////////////////////////////////////
-
-	
-	/*
-	if (m_ship != NULL) {
-		glUniform1i(m_hasTexture, false);
-
-
-		glUniformMatrix4fv(m_modelMatrix, 1, GL_FALSE, glm::value_ptr(m_ship->GetModel()));
-
-		if (m_ship->hasTex) {
+		if (m_user->getMesh()->hasTex)
+		{
 			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, m_ship->getTextureID());
-			GLuint sampler = m_shader->GetUniformLocation("sp");
-			if (sampler == INVALID_UNIFORM_LOCATION)
-			{
-				printf("Sampler Not found not found\n");
-			}
-			glUniform1i(sampler, 0);
-			m_ship->Render(m_positionAttrib, m_colorAttrib, m_tcAttrib, m_hasTexture);
+			glBindTexture(GL_TEXTURE_2D, m_user->getMesh()->getTextureID());
+			glUniform1i(m_shader->GetUniformLocation("sp"), 0);
+			glUniform1i(m_hasTexture, true);
 		}
+		else
+		{
+			glUniform1i(m_hasTexture, false);
+		}
+
+		glUniform1i(m_hasNormalMap, false); // Assuming ship has no normal map
+		m_user->getMesh()->Render(m_positionAttrib, m_normalAttrib, m_tcAttrib, m_hasTexture, m_hasNormalMap);
 	}
-	
-	*/
 
-	
-	if (m_space != NULL) {
+	// === Render sky (space sphere) ===
+	if (m_space)
+	{
+		glm::mat4 model = m_space->GetModel();
+		glm::mat4 view = cam->GetView();
+		glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(view * model)));
 
-		glUniformMatrix3fv(m_normalMatrix, 1, GL_FALSE, glm::value_ptr(glm::transpose(glm::inverse(glm::mat3(m_camera->GetView() * m_space->GetModel())))));
-		glUniformMatrix4fv(m_modelMatrix, 1, GL_FALSE, glm::value_ptr(m_space->GetModel()));
+		glUniformMatrix4fv(m_modelMatrix, 1, GL_FALSE, glm::value_ptr(model));
+		glUniformMatrix3fv(m_normalMatrix, 1, GL_FALSE, glm::value_ptr(normalMatrix));
 
-		if (m_space->hasTex) {
+		if (m_space->hasTex)
+		{
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, m_space->getTextureID());
 			glUniform1i(m_shader->GetUniformLocation("sp"), 0);
 			glUniform1i(m_shader->GetUniformLocation("hasTexture"), 1);
 		}
-		else {
+		else
+		{
 			glUniform1i(m_shader->GetUniformLocation("hasTexture"), 0);
 		}
 
-		if (m_space->hasNormalTex) {
-			glActiveTexture(GL_TEXTURE1);
-			glBindTexture(GL_TEXTURE_2D, m_space->getNormalTextureID());
-			glUniform1i(m_shader->GetUniformLocation("normalMap"), 1);
-			glUniform1i(m_shader->GetUniformLocation("hasNormalMap"), 1);
-		}
-		else {
-			glUniform1i(m_shader->GetUniformLocation("hasNormalMap"), 0);
-		}
-
+		glUniform1i(m_shader->GetUniformLocation("hasNormalMap"), 0); // Space doesn't use normal map
 		SetMaterial(m_spaceMat);
 		m_space->Render(m_positionAttrib, m_normalAttrib, m_tcAttrib, m_hasTexture, m_hasNormalMap);
 	}
 
-	if (m_sun != NULL) {
+	// === Render Sun ===
+	if (m_sun)
+	{
+		glm::mat4 model = m_sun->GetModel();
+		glm::mat4 view = cam->GetView();
+		glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(view * model)));
 
-		glUniformMatrix3fv(m_normalMatrix, 1, GL_FALSE, glm::value_ptr(glm::transpose(glm::inverse(glm::mat3(m_camera->GetView() * m_sun->GetModel())))));
-		glUniformMatrix4fv(m_modelMatrix, 1, GL_FALSE, glm::value_ptr(m_sun->GetModel()));
+		glUniformMatrix4fv(m_modelMatrix, 1, GL_FALSE, glm::value_ptr(model));
+		glUniformMatrix3fv(m_normalMatrix, 1, GL_FALSE, glm::value_ptr(normalMatrix));
 
-		if (m_sun->hasTex) {
+		if (m_sun->hasTex)
+		{
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, m_sun->getTextureID());
 			glUniform1i(m_shader->GetUniformLocation("sp"), 0);
 			glUniform1i(m_shader->GetUniformLocation("hasTexture"), 1);
 		}
-		else {
+		else
+		{
 			glUniform1i(m_shader->GetUniformLocation("hasTexture"), 0);
 		}
 
-		if (m_sun->hasNormalTex) {
-			glActiveTexture(GL_TEXTURE1);
-			glBindTexture(GL_TEXTURE_2D, m_sun->getNormalTextureID());
-			glUniform1i(m_shader->GetUniformLocation("normalMap"), 1);
-			glUniform1i(m_shader->GetUniformLocation("hasNormalMap"), 1);
-		}
-		else {
-			glUniform1i(m_shader->GetUniformLocation("hasNormalMap"), 0);
-		}
+		glUniform1i(m_shader->GetUniformLocation("hasNormalMap"), 0); // no normal map
 		SetMaterial(m_sunMat);
-
 		m_sun->Render(m_positionAttrib, m_normalAttrib, m_tcAttrib, m_hasTexture, m_hasNormalMap);
 	}
 
+	// === Render Earth ===
+	if (m_earth)
+	{
+		glm::mat4 model = m_earth->GetModel();
+		glm::mat4 view = cam->GetView();
+		glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(view * model)));
 
+		glUniformMatrix4fv(m_modelMatrix, 1, GL_FALSE, glm::value_ptr(model));
+		glUniformMatrix3fv(m_normalMatrix, 1, GL_FALSE, glm::value_ptr(normalMatrix));
 
-	//Rendder the EARTH
-	if (m_earth != NULL) {
-		glUniformMatrix4fv(m_modelMatrix, 1, GL_FALSE, glm::value_ptr(m_earth->GetModel()));
-		glm::mat3 normMat = glm::transpose(glm::inverse(glm::mat3(m_camera->GetView() * m_earth->GetModel())));
-		glUniformMatrix3fv(m_normalMatrix, 1, GL_FALSE, glm::value_ptr(normMat));
-
-
-		//Material for EARTH
-		//SetMaterial(m_earth->getMaterial());
-
-		if (m_earth->hasTex) {
+		if (m_earth->hasTex)
+		{
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, m_earth->getTextureID());
-
-			GLuint sampler = m_shader->GetUniformLocation("sp");
-			if (sampler == INVALID_UNIFORM_LOCATION) {
-				printf("Sampler not found\n");
-			}
-			glUniform1i(sampler, 0);  // texture unit 0
+			glUniform1i(m_shader->GetUniformLocation("sp"), 0);
 			glUniform1i(m_hasTexture, true);
 		}
-		else {
+		else
+		{
 			glUniform1i(m_hasTexture, false);
 		}
 
-		if (m_earth->hasNormalTex) {
+		if (m_earth->hasNormalTex)
+		{
 			glActiveTexture(GL_TEXTURE1);
 			glBindTexture(GL_TEXTURE_2D, m_earth->getNormalTextureID());
-			GLuint normalSampler = m_shader->GetUniformLocation("normalMap");
-			glUniform1i(normalSampler, 1);
+			glUniform1i(m_shader->GetUniformLocation("normalMap"), 1);
 			glUniform1i(m_hasNormalMap, true);
 		}
-		else {
+		else
+		{
 			glUniform1i(m_hasNormalMap, false);
 		}
-		//SetMaterial(m_earth->getMaterial());
-		SetMaterial(m_earthMat);
 
+		SetMaterial(m_earthMat);
 		m_earth->Render(m_positionAttrib, m_normalAttrib, m_tcAttrib, m_hasTexture, m_hasNormalMap);
 	}
 
-
-	/*
-
-	if (m_moon != NULL) {
-		glUniformMatrix4fv(m_modelMatrix, 1, GL_FALSE, glm::value_ptr(m_moon->GetModel()));
-
-		if (m_moon->hasTex) {
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, m_moon->getTextureID());
-
-			GLuint sampler = m_shader->GetUniformLocation("sp");
-			if (sampler == INVALID_UNIFORM_LOCATION) {
-				printf("Sampler not found\n");
-			}
-			glUniform1i(sampler, 0);  // texture unit 0
-			glUniform1i(m_hasTexture, true);
-		}
-		else {
-			glUniform1i(m_hasTexture, false);
-		}
-
-		m_moon->Render(m_positionAttrib, m_colorAttrib, m_tcAttrib, m_hasTexture);
-	}
-	*/
-	// Get any errors from OpenGL
-	auto error = glGetError();
+	// === Error checking ===
+	GLenum error = glGetError();
 	if (error != GL_NO_ERROR)
 	{
-		string val = ErrorString(error);
-		std::cout << "Error initializing OpenGL! " << error << ", " << val << std::endl;
+		std::cerr << "OpenGL Error: " << ErrorString(error) << "\n";
 	}
 }
 

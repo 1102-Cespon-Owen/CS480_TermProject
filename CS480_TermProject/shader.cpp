@@ -81,7 +81,7 @@ bool Shader::AddShader(GLenum ShaderType)
     else if (ShaderType == GL_FRAGMENT_SHADER)
     {
             
-           s = R"(
+          s = R"(
 
                 #version 450
 
@@ -144,7 +144,7 @@ bool Shader::AddShader(GLenum ShaderType)
             // changed vec4 ambient: vec4 ambient = light.ambient * material.ambient; 
            //Added the gammaCorrected above, replaced frag_color with, frag_color = ambient + diffuse + specular;frag_color = ambient + diffuse + specular;
            //GAMMA CORRECTION: brightens up the screen to help see
-
+           
 
            //ISSUE there are no shadows
 
