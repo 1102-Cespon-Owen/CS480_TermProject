@@ -41,10 +41,6 @@ class User
 		void YawRight();
 
 		void applyOrientation();
-
-
-		//void moveExpLeft();
-		//void moveExpRight();
 		void resetObsCamera();
 
 
@@ -77,7 +73,11 @@ class User
 		glm::vec3 obsFront;
 		glm::vec3 obsUp;
 
-		//glm::vec3 shipPosition;
+		glm::mat4 orientation = glm::mat4(1.0f); // declared in header
+		float yawDelta = 0.0f;
+		float pitchDelta = 0.0f;
+		float rollDelta = 0.0f;
+
 		float shipSpeed = 0.f;
 		float maxShipSpeed = 1.0f;
 		float shipYaw = -90.f;

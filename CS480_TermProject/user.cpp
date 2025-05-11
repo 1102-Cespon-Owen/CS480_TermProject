@@ -7,8 +7,8 @@ User::User() {
 	cameraOffsetObs = glm::vec3(0.f, 0.0f, 100.f);
 	m_cameraExp = new Camera();
 	m_cameraObs = new Camera();
-	m_cameraExp->Initialize1(800, 600, pivotLoc + cameraOffsetExp, pivotLoc);
-	m_cameraObs->Initialize2(800, 600, pivotLoc + cameraOffsetObs);
+	m_cameraExp->Initialize1(1600, 1200, pivotLoc + cameraOffsetExp, pivotLoc);
+	m_cameraObs->Initialize2(1600, 1200, pivotLoc + cameraOffsetObs);
 
 	angle = 0.0f;
 	model = glm::translate(glm::mat4(1.0f), pivotLoc);
@@ -33,8 +33,8 @@ User::User(glm::vec3 pivot) {
 	m_cameraObs = new Camera();
 	glm::vec3 camExpPos = pivotLoc + cameraOffsetExp;
 	glm::vec3 camObsPos = pivotLoc + cameraOffsetObs;
-	m_cameraExp->Initialize1(800, 600, camExpPos, pivotLoc);
-	m_cameraObs->Initialize2(800, 600, camObsPos);
+	m_cameraExp->Initialize1(1600, 1200, camExpPos, pivotLoc);
+	m_cameraObs->Initialize2(1600, 1200, camObsPos);
 
 	angle = 0.0f;
 	model = glm::translate(glm::mat4(1.0f), pivotLoc);
@@ -130,6 +130,7 @@ void User::Stop() {
 	}
 }
 
+
 void User::RollLeft() {
 	shipRoll += 0.02f; // roll left
 }
@@ -139,18 +140,11 @@ void User::RollRight() {
 }
 
 void User::YawLeft() {
-	// Rotate around ship's local up axis
-	glm::vec3 shipUp = glm::normalize(glm::vec3(model * glm::vec4(0, 1, 0, 0)));
-	yaw += 0.02f;
-
-	applyOrientation();
+	yaw += 0.002f;
 }
 
 void User::YawRight() {
-	glm::vec3 shipUp = glm::normalize(glm::vec3(model * glm::vec4(0, 1, 0, 0)));
-	yaw -= 0.02f;
-
-	applyOrientation();
+	yaw += -0.002f;
 }
 
 
@@ -218,6 +212,9 @@ void User::UpdateDT() {
 }
 
 void User::updateModel() {
+
+	applyOrientation();
+
 	ship->Update(model);
 
 	if (mode == EXPLORATION) {
@@ -246,16 +243,22 @@ void User::updateModel() {
 
 
 void User::applyOrientation() {
+	
 	glm::vec3 shipPos = glm::vec3(model[3]);
 
+	// Start from identity
 	glm::mat4 rotation = glm::mat4(1.0f);
-	rotation = glm::rotate(rotation, yaw, glm::vec3(0, 1, 0));     // global Y-axis for reference
-	rotation = glm::rotate(rotation, pitch, glm::vec3(1, 0, 0));   // pitch around X
-	rotation = glm::rotate(rotation, shipRoll, glm::vec3(0, 0, 1)); // roll around Z
 
+	// Apply roll, then pitch, then yaw in ship's local frame
+	rotation = glm::rotate(rotation, shipRoll, glm::vec3(0, 0, 1)); // roll around local Z
+	rotation = glm::rotate(rotation, pitch, glm::vec3(1, 0, 0));    // pitch around local X
+	rotation = glm::rotate(rotation, yaw, glm::vec3(0, 1, 0));      // yaw around local Y
+
+	// Apply translation and scale
 	model = glm::translate(glm::mat4(1.0f), shipPos);
 	model *= glm::scale(glm::vec3(0.001f));
 	model *= rotation;
 
 	ship->Update(model);
+	
 }

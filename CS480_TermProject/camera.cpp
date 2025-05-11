@@ -84,51 +84,7 @@ void Camera::SetYaw(float newYaw) {
     yaw = newYaw;
 }
 
-/*
-void Camera::MoveRight() {
-    camSpeed = 2.5f * dt;
-    camPos += glm::normalize(glm::cross(camFront, camUp)) * camSpeed;
-    view = glm::lookAt(camPos, camPos + camFront, camUp);
-}
 
-void Camera::MoveLeft() {
-    camSpeed = 2.5f * dt;
-    camPos -= glm::normalize(glm::cross(camFront, camUp)) * camSpeed;
-    view = glm::lookAt(camPos, camPos + camFront, camUp);
-}
-
-void Camera::MoveForward() {
-	camSpeed = 2.5f * dt;
-	camPos += camSpeed * camFront;
-	view = glm::lookAt(camPos, camPos + camFront, camUp);
-}
-
-void Camera::MoveBackward() {
-    camSpeed = 2.5f * dt;
-    camPos -= camSpeed * camFront;
-    view = glm::lookAt(camPos, camPos + camFront, camUp);
-}
-*/
-
-/*
-
-void Camera::ProcessMouseMovement(float xoffset, float yoffset) {
-    yaw += xoffset;
-    pitch += yoffset;
-
-    // Clamp pitch
-    if (pitch > 89.0f) pitch = 89.0f;
-    if (pitch < -89.0f) pitch = -89.0f;
-
-    glm::vec3 direction;
-    direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-    direction.y = sin(glm::radians(pitch));
-    direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-    camFront = glm::normalize(direction);
-
-    view = glm::lookAt(camPos, camPos + camFront, camUp);
-}
-*/
 void Camera::Update1(glm::vec3 targetPos, glm::vec3 offset, float angleStep) {
     // Creates an orbit rotation for third-person view
     orbitYaw += glm::radians(angleStep);

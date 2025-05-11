@@ -120,30 +120,6 @@ void Engine::ProcessInput()
 	if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS)
 		user->Stop();
 
-
-    /*
-    // Move camera based on WASD input
-    if (glfwGetKey(m_window->getWindow(), GLFW_KEY_W) == GLFW_PRESS)
-    {
-        m_graphics->getCamera()->MoveForward();
-    }
-    if (glfwGetKey(m_window->getWindow(), GLFW_KEY_S) == GLFW_PRESS)
-    {
-        m_graphics->getCamera()->MoveBackward();
-
-    }
-    if (glfwGetKey(m_window->getWindow(), GLFW_KEY_A) == GLFW_PRESS)
-    {
-        m_graphics->getCamera()->MoveLeft();
-
-    }
-    if (glfwGetKey(m_window->getWindow(), GLFW_KEY_D) == GLFW_PRESS)
-    {
-        m_graphics->getCamera()->MoveRight();
-
-    }
-    */
-
 }
 
 
