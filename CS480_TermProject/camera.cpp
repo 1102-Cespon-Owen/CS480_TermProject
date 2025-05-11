@@ -98,12 +98,6 @@ void Camera::Update2(float xoffset, float yoffset, glm::mat4 targetModel, glm::v
     yaw += xoffset;
     pitch += yoffset;
 
-    // Limit pitch
-    if (pitch > 89.0f)
-        pitch = 89.0f;
-    if (pitch < -89.0f)
-        pitch = -89.0f;
-
     // Get direction based on x and y offsets
     glm::vec3 direction;
     direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));

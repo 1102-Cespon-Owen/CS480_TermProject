@@ -60,29 +60,14 @@ class User
 
 		float dt;
 		float lastFrame;
-		float yaw;
-		float pitch;
-		float angle;
-		float shipAcceleration;
-
-		//maybe use
-		glm::mat4 obsPlanetModel;
-
-		float obsYaw, obsPitch;
-		glm::vec3 obsPos;
-		glm::vec3 obsFront;
-		glm::vec3 obsUp;
-
+	
 		glm::mat4 orientation = glm::mat4(1.0f); // declared in header
-		float yawDelta = 0.0f;
-		float pitchDelta = 0.0f;
-		float rollDelta = 0.0f;
+
 
 		float shipSpeed = 0.f;
 		float maxShipSpeed = 1.0f;
-		float shipYaw = -90.f;
-		float shipPitch = 0.f;
-		float shipRoll = 0.f;
+		float shipAcceleration;
+
 
 };
 #endif /* SCENE_H  */

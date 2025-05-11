@@ -172,26 +172,6 @@ void Graphics::HierarchicalUpdate2(double dt) {
 
 	modelStack.pop();  // back to Earth
 	modelStack.pop();  // back to Sun
-
-
-	//////////////////////////////// NEED TO ADJUST STARSHIP ORBIT AND ORIENTATION
-	// === STARSHIP ===    
-	std::vector<float> shipSpeed = { 0.5, 0.5, 0.5 };
-	std::vector<float> shipDist = { 0, 2., 2. };
-	glm::vec3 shipRotVector = { 1.,0.,0. };
-	std::vector<float> shipRotSpeed = { 0.5, 0.5, 0.5 };
-	std::vector<float> shipScale = { .01f, .01f, .01f };
-	localTransform = modelStack.top();
-	localTransform *= glm::translate(glm::mat4(1.f),
-		glm::vec3(cos(shipSpeed[0] * dt) * shipDist[0], cos(shipSpeed[1] * dt) * shipDist[1], sin(shipSpeed[2] * dt) * shipDist[2]));
-	modelStack.push(localTransform);
-	localTransform *= glm::rotate(glm::mat4(1.f), shipRotSpeed[0] * (float)dt, shipRotVector);
-	localTransform *= glm::scale(glm::vec3(shipScale[0], shipScale[1], shipScale[2]));
-	localTransform *= glm::rotate(glm::mat4(1.f), glm::radians(90.f), shipRotVector);
-
-
-	if (m_ship != NULL)
-		m_ship->Update(localTransform);
 	*/
 	modelStack.pop();  // return to sun
 	
