@@ -116,6 +116,8 @@ bool Shader::AddShader(GLenum ShaderType)
                 uniform vec3 lightPos;
 
                 uniform vec4 GlobalAmbient;
+                
+                uniform bool isEmitter;
 
                 out vec4 frag_color;
 
@@ -137,8 +139,13 @@ bool Shader::AddShader(GLenum ShaderType)
                     vec4 specular = material.specular * spec * vec4(lightColor, 1.0);
 
                     vec4 texColor = texture(sp, tc);
-
-                    frag_color = (ambient + diffuse + specular) * texColor;
+                       
+                    if(isEmitter){
+                        frag_color = texColor;
+                    }
+                    else{
+                        frag_color = (ambient + diffuse + specular) * texColor;
+                    }
                 }
             )";
             // changed vec4 ambient: vec4 ambient = light.ambient * material.ambient; 

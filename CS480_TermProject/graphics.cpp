@@ -78,17 +78,13 @@ bool Graphics::Initialize(int width, int height)
 	}
 
 	//Sky Box (SPACE)
-	m_space = new Sphere(128, "Cubemaps/Galaxy2.jpg", NULL);
+	m_space = new Sphere(48, "Cubemaps/Galaxy8.png", NULL);
 	m_spaceMat = {
 		glm::vec4(0.1, 0.1, 0.1, 1.0), // ambient
 		glm::vec4(0.1, 0.1, 0.1, 1.0), // diffuse
 		glm::vec4(0.1, 0.1, 0.1, 1.0), // specular
 		16.0f
 	};
-
-
-	//Starship
-	m_ship = new Mesh(glm::vec3(2.0f, 3.0f, -5.0f), "assets/SpaceShip-1.obj", "assets/SpaceShip-1.png");
 
 	// The Sun
 	m_sun = new Sphere(64, "Planetary_Textures/2k_sun.jpg", NULL);
@@ -99,19 +95,43 @@ bool Graphics::Initialize(int width, int height)
 	16.0f
 	};
 
+	//Planet Material
+	planetMaterial = {
+		glm::vec4(0.3, 0.3, 0.3, 1.0),
+		glm::vec4(1.0, 1.0, 1.0, 1.0),
+		glm::vec4(1.0, 1.0, 1.0, 1.0),
+		32.0f
+	};
 
 	// The Earth
 	m_earth = new Sphere(48, "Planetary_Textures/2k_earth_daymap.jpg", "Planetary_Textures/2k_earth_daymap-n.jpg");
-	m_earthMat = {
-	glm::vec4(0.3, 0.3, 0.3, 1.0),
-	glm::vec4(1.0, 1.0, 1.0, 1.0),
-	glm::vec4(1.0, 1.0, 1.0, 1.0),
-	32.0f
-	};
+
+	m_earth->setMaterial(planetMaterial);
 
 	// The moon
-	//m_moon = new Sphere(48, "Planetary_Textures/2k_moon.jpg");
+	m_moon = new Sphere(48, "Planetary_Textures/2k_moon.jpg", "Planetary_Textures/2k_moon.jpg");
+	m_moon->setMaterial(planetMaterial);
 
+	// Mercury
+	m_mercury = new Sphere(48, "Planetary_Textures/Mercury.jpg", "Planetary_Textures/Mercury-n.jpg");
+
+	// Venus
+	m_venus = new Sphere(48, "Planetary_Textures/Venus.jpg", "Planetary_Textures/Venus-n.jpg");
+
+	// Mars
+	m_mars = new Sphere(48, "Planetary_Textures/Mars.jpg", "Planetary_Textures/Mars-n.jpg");
+
+	// Jupiter
+	m_jupiter = new Sphere(48, "Planetary_Textures/Jupiter.jpg", "Planetary_Textures/Jupiter-n.jpg");
+
+	// Saturn
+	m_saturn = new Sphere(48, "Planetary_Textures/Saturn.jpg", NULL);
+
+	// Uranus
+	m_uranus = new Sphere(48, "Planetary_Textures/Uranus.jpg", "Planetary_Textures/Uranus-n.jpg");
+
+	// Neptune
+	m_neptune = new Sphere(48, "Planetary_Textures/Neptune.jpg", "Planetary_Textures/Neptune-n.jpg");
 
 
 	//enable depth testing
@@ -135,35 +155,62 @@ void Graphics::HierarchicalUpdate2(double dt) {
 	// === SUN ===
 	modelStack.push(glm::translate(glm::mat4(1.f), glm::vec3(0, 0, 0)));  // Sun at origin
 	localTransform = modelStack.top();
-	localTransform *= glm::rotate(glm::mat4(1.0f), (float)(0.5 * dt), glm::vec3(0.f, 1.f, 0.f));
-	localTransform *= glm::scale(glm::vec3(1.25f));
+	localTransform *= glm::rotate(glm::mat4(1.0f), (float)(0.2 * dt), glm::vec3(0.f, 1.f, 0.f));
+	localTransform *= glm::scale(glm::vec3(0.9f));
 	if (m_sun) m_sun->Update(localTransform);
 	
-	
-	// === EARTH ===
-	std::vector<float> earthSpeed = { .5f, .5f, .5f };
-	std::vector<float> earthDist = { 6.f, 0.f, 6.f };
-	glm::vec3 earthRotVector = { 0.f, 1.f, 0.f };
-	std::vector<float> earthRotSpeed = { .2f };
-	std::vector<float> earthScale = { 0.75f, 0.75f, 0.75f };
+	// === MERCURY ===
+	std::vector<float> speed = { .8f, .8f, .8f };
+	std::vector<float> dist = { 1.6f, 0.f, 1.6f };
+	glm::vec3 rotVec = { 0.f, 1.f, 0.f };
+	std::vector<float> rotSpeed = { .15f };
+	std::vector<float> scale = { 0.12f, 0.12f, 0.12f };
+	ComputeTransforms(dt, speed, dist, rotSpeed, rotVec, scale, tmat, rmat, smat);
+	localTransform = modelStack.top() * tmat;
+	modelStack.push(localTransform);
+	localTransform *= rmat;
+	localTransform *= smat;
+	if (m_mercury) m_mercury->Update(localTransform);
 
-	ComputeTransforms(dt, earthSpeed, earthDist, earthRotSpeed, earthRotVector, earthScale, tmat, rmat, smat);
+	modelStack.pop(); //Back to sun
+
+	// === VENUS ===
+	speed = { .35f, .35f, .35f };
+	dist = { 3.5f, 0.f, 3.5f };
+	rotVec = { 0.f, 1.f, 0.f };
+	rotSpeed = { -0.1f };
+	scale = { 0.26f, 0.26f, 0.26f };
+	ComputeTransforms(dt, speed, dist, rotSpeed, rotVec, scale, tmat, rmat, smat);
+	localTransform = modelStack.top() * tmat;
+	modelStack.push(localTransform);
+	localTransform *= rmat;
+	localTransform *= smat;
+	if (m_venus) m_venus->Update(localTransform);
+
+	modelStack.pop(); //Back to sun
+
+	// === EARTH ===
+	speed = { .2f, .2f, .2f };
+	dist = { 6.f, 0.f, 6.f };
+	rotVec = { 0.f, 1.f, 0.f };
+	rotSpeed = { .2f };
+	scale = { 0.3f, 0.3f, 0.3f };
+
+	ComputeTransforms(dt, speed, dist, rotSpeed, rotVec, scale, tmat, rmat, smat);
 	localTransform = modelStack.top() * tmat;
 	modelStack.push(localTransform);
 	localTransform *= rmat;
 	localTransform *= smat;
 	if (m_earth) m_earth->Update(localTransform);
 
-
-	 /*
 	// === MOON ===
-	std::vector<float> moonSpeed = { 3.f, 3.f, 3.f };
-	std::vector<float> moonDist = { 1.25f, 1.25f, 0.75f };
-	glm::vec3 moonRotVector = { 0.f, 1.f, 1.f };
-	std::vector<float> moonRotSpeed = { 3.f };
-	std::vector<float> moonScale = { 0.15f, 0.15f, 0.15f };
+	speed = { 1.f, 1.f, 1.f };
+	dist = { 1.25f, 1.25f, 0.75f };
+	rotVec = { 0.f, 1.f, 1.f };
+	rotSpeed = { 1.f };
+	scale = { 0.1f, 0.1f, 0.1f };
 
-	ComputeTransforms(dt, moonSpeed, moonDist, moonRotSpeed, moonRotVector, moonScale, tmat, rmat, smat);
+	ComputeTransforms(dt, speed, dist, rotSpeed, rotVec, scale, tmat, rmat, smat);
 	localTransform = modelStack.top() * tmat;
 	modelStack.push(localTransform);
 	localTransform *= rmat;
@@ -172,8 +219,9 @@ void Graphics::HierarchicalUpdate2(double dt) {
 
 	modelStack.pop();  // back to Earth
 	modelStack.pop();  // back to Sun
-	*/
-	modelStack.pop();  // return to sun
+
+
+
 	
 	modelStack.pop(); // empty stack
 
@@ -192,6 +240,42 @@ void Graphics::ComputeTransforms(double dt, std::vector<float> speed, std::vecto
 	smat = glm::scale(glm::vec3(scale[0], scale[1], scale[2]));
 }
 
+void Graphics::RenderPlanets(Sphere* planet) {
+	glm::mat4 model = planet->GetModel();
+	glm::mat4 view = cam->GetView();
+	glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(view * model)));
+
+	glUniformMatrix4fv(m_modelMatrix, 1, GL_FALSE, glm::value_ptr(model));
+	glUniformMatrix3fv(m_normalMatrix, 1, GL_FALSE, glm::value_ptr(normalMatrix));
+
+	if (planet->hasTex)
+	{
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, planet->getTextureID());
+		glUniform1i(m_shader->GetUniformLocation("sp"), 0);
+		glUniform1i(m_hasTexture, true);
+	}
+	else
+	{
+		glUniform1i(m_hasTexture, false);
+	}
+
+	if (planet->hasNormalTex)
+	{
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, planet->getNormalTextureID());
+		glUniform1i(m_shader->GetUniformLocation("normalMap"), 1);
+		glUniform1i(m_hasNormalMap, true);
+	}
+	else
+	{
+		glUniform1i(m_hasNormalMap, false);
+	}
+
+	SetMaterial(planetMaterial);
+	planet->Render(m_positionAttrib, m_normalAttrib, m_tcAttrib, m_hasTexture, m_hasNormalMap);
+}
+
 
 void Graphics::Render()
 {
@@ -203,7 +287,7 @@ void Graphics::Render()
 	m_shader->Enable();
 
 	// === Select current camera based on mode ===
-	Camera* cam = (m_user->getCameraMode() == EXPLORATION)
+	cam = (m_user->getCameraMode() == EXPLORATION)
 		? m_user->getExpCamera()
 		: m_user->getObsCamera();
 
@@ -233,6 +317,7 @@ void Graphics::Render()
 	// === Render ship ===
 	if (m_user->getMesh())
 	{
+		glUniform1i(m_shader->GetUniformLocation("isEmitter"), 0);
 		glUniformMatrix4fv(m_modelMatrix, 1, GL_FALSE, glm::value_ptr(m_user->getMesh()->GetModel()));
 
 		if (m_user->getMesh()->hasTex)
@@ -254,6 +339,7 @@ void Graphics::Render()
 	// === Render sky (space sphere) ===
 	if (m_space)
 	{
+		glUniform1i(m_shader->GetUniformLocation("isEmitter"), 1);
 		glm::mat4 model = m_space->GetModel();
 		glm::mat4 view = cam->GetView();
 		glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(view * model)));
@@ -285,6 +371,7 @@ void Graphics::Render()
 		glm::mat4 view = cam->GetView();
 		glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(view * model)));
 
+		glUniform1i(m_shader->GetUniformLocation("isEmitter"), 1);
 		glUniformMatrix4fv(m_modelMatrix, 1, GL_FALSE, glm::value_ptr(model));
 		glUniformMatrix3fv(m_normalMatrix, 1, GL_FALSE, glm::value_ptr(normalMatrix));
 
@@ -304,44 +391,19 @@ void Graphics::Render()
 		SetMaterial(m_sunMat);
 		m_sun->Render(m_positionAttrib, m_normalAttrib, m_tcAttrib, m_hasTexture, m_hasNormalMap);
 	}
+	glUniform1i(m_shader->GetUniformLocation("isEmitter"), 0);
+	
+	// === Render Mercury ===
+	RenderPlanets(m_mercury);
+
+	// === Render Venus ===
+	RenderPlanets(m_venus);
 
 	// === Render Earth ===
-	if (m_earth)
-	{
-		glm::mat4 model = m_earth->GetModel();
-		glm::mat4 view = cam->GetView();
-		glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(view * model)));
+	RenderPlanets(m_earth);
 
-		glUniformMatrix4fv(m_modelMatrix, 1, GL_FALSE, glm::value_ptr(model));
-		glUniformMatrix3fv(m_normalMatrix, 1, GL_FALSE, glm::value_ptr(normalMatrix));
-
-		if (m_earth->hasTex)
-		{
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, m_earth->getTextureID());
-			glUniform1i(m_shader->GetUniformLocation("sp"), 0);
-			glUniform1i(m_hasTexture, true);
-		}
-		else
-		{
-			glUniform1i(m_hasTexture, false);
-		}
-
-		if (m_earth->hasNormalTex)
-		{
-			glActiveTexture(GL_TEXTURE1);
-			glBindTexture(GL_TEXTURE_2D, m_earth->getNormalTextureID());
-			glUniform1i(m_shader->GetUniformLocation("normalMap"), 1);
-			glUniform1i(m_hasNormalMap, true);
-		}
-		else
-		{
-			glUniform1i(m_hasNormalMap, false);
-		}
-
-		SetMaterial(m_earthMat);
-		m_earth->Render(m_positionAttrib, m_normalAttrib, m_tcAttrib, m_hasTexture, m_hasNormalMap);
-	}
+	//Moon
+	RenderPlanets(m_moon);
 
 	// === Error checking ===
 	GLenum error = glGetError();

@@ -189,8 +189,9 @@ bool Mesh::loadModelFromFile(const char* path) {
 
 	for (int i = 0; i < scene->mNumMeshes; i++) {
 		aiMesh* mesh = scene->mMeshes[i];
+		int iMeshfaces = mesh->mNumFaces;
 
-		for (int j = 0; j < mesh->mNumFaces; j++) {
+		for (int j = 0; j < iMeshfaces; j++) {
 			const aiFace& face = mesh->mFaces[j];
 
 			for (int k = 0; k < 3; k++) {
@@ -203,7 +204,7 @@ bool Mesh::loadModelFromFile(const char* path) {
 		iTotalVerts += mesh->mNumVertices; 
 	}
 
-	for (int i = 0; i < Vertices.size(); ++i) {
+	for (int i = 0; i < Vertices.size(); i++) {
 		Indices.push_back(i);
 	}
 

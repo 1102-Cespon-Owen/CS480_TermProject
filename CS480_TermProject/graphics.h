@@ -28,6 +28,8 @@ class Graphics
     void HierarchicalUpdate2(double dt);
     void Render();
 
+    void RenderPlanets(Sphere* planet);
+
  
     void SetMaterial(const Material& mat);
     User* getUser() { return m_user; }
@@ -44,7 +46,7 @@ class Graphics
 
     stack<glm::mat4> modelStack;
 
-    //Camera *m_camera;
+    Camera *cam;
     Shader *m_shader;
 
     GLint m_projectionMatrix;
@@ -65,30 +67,36 @@ class Graphics
 	Material m_spaceMat;
 
     // SOLAR BODIES
-
+    Material planetMaterial;
     //SUN
     Sphere* m_sun;
 	Material m_sunMat;
 
     //MERCURY
+    Sphere* m_mercury;
 
 	//VENUS
+    Sphere* m_venus;
 
 	//EARTH SYSTEM
     Sphere* m_earth;
-	Material m_earthMat;
+
     Sphere* m_moon;
 
 	//MARS
+    Sphere* m_mars;
 
 	//JUPITER
+    Sphere* m_jupiter;
 
 	//SATURN
+    Sphere* m_saturn;
 
 	//URANUS
+    Sphere* m_uranus;
 
 	//NEPTUNE
-
+    Sphere* m_neptune;
 	
 
     //STARSHIP
