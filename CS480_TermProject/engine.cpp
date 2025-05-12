@@ -125,21 +125,13 @@ void Engine::ProcessInput()
 
 unsigned int Engine::getDT()
 {
-    //long long TimeNowMillis = GetCurrentTimeMillis();
-    //assert(TimeNowMillis >= m_currentTimeMillis);
-    //unsigned int DeltaTimeMillis = (unsigned int)(TimeNowMillis - m_currentTimeMillis);
-    //m_currentTimeMillis = TimeNowMillis;
-    //return DeltaTimeMillis;
+
     return glfwGetTime();
 }
 
 
 long long Engine::GetCurrentTimeMillis()
 {
-    //timeval t;
-    //gettimeofday(&t, NULL);
-    //long long ret = t.tv_sec * 1000 + t.tv_usec / 1000;
-    //return ret;
     return (long long)glfwGetTime();
 }
 

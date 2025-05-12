@@ -24,15 +24,9 @@ public:
  
     void LookAt(glm::vec3 target);
 
-    //void MoveRight();
-    //void MoveLeft();
+
     void ProcessMouseScroll(float yoffset);
 
-    //void ProcessMouseMovement(float xoffset, float yoffset);
-
-    //void Update();
-    //void MoveForward();
-	//void MoveBackward();
 
     // NEW
     void FollowShip(glm::vec3 pos, glm::vec3 dir, float speed);
@@ -59,13 +53,6 @@ private:
     float orbitYaw;
 
     float width, height; 
-
-    //NEW
-    //bool followShip = false;
-    //glm::vec3 shipPos, shipDir;
-    //float shipSpeed = 0.0f;
-
-
 
 };
 
