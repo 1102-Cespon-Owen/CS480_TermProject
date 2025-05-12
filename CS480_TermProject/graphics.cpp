@@ -78,7 +78,7 @@ bool Graphics::Initialize(int width, int height)
 	}
 
 	//Sky Box (SPACE)
-	m_space = new Sphere(48, "Cubemaps/Galaxy8.png", NULL);
+	m_space = new Sphere(128, "Cubemaps/starmap_random_4k.jpg", NULL);
 	m_spaceMat = {
 		glm::vec4(0.1, 0.1, 0.1, 1.0), // ambient
 		glm::vec4(0.1, 0.1, 0.1, 1.0), // diffuse
@@ -133,6 +133,12 @@ bool Graphics::Initialize(int width, int height)
 	// Neptune
 	m_neptune = new Sphere(48, "Planetary_Textures/Neptune.jpg", "Planetary_Textures/Neptune-n.jpg");
 
+	// Ring
+	m_ring = new Ring(0.7f, 1.3f, 50, "Planetary_Textures/Saturn_ring.png");
+
+	// Comet
+	m_comet = new Sphere(48, "Planetary_Textures/Eris.jpg", "Planetary_Textures/Eris-n.jpg");
+
 
 	//enable depth testing
 	glEnable(GL_DEPTH_TEST);
@@ -156,12 +162,12 @@ void Graphics::HierarchicalUpdate2(double dt) {
 	modelStack.push(glm::translate(glm::mat4(1.f), glm::vec3(0, 0, 0)));  // Sun at origin
 	localTransform = modelStack.top();
 	localTransform *= glm::rotate(glm::mat4(1.0f), (float)(0.2 * dt), glm::vec3(0.f, 1.f, 0.f));
-	localTransform *= glm::scale(glm::vec3(0.9f));
+	localTransform *= glm::scale(glm::vec3(0.95f));
 	if (m_sun) m_sun->Update(localTransform);
 	
 	// === MERCURY ===
 	std::vector<float> speed = { .8f, .8f, .8f };
-	std::vector<float> dist = { 1.6f, 0.f, 1.6f };
+	std::vector<float> dist = { -1.6f, 0.f, 1.6f };
 	glm::vec3 rotVec = { 0.f, 1.f, 0.f };
 	std::vector<float> rotSpeed = { .15f };
 	std::vector<float> scale = { 0.12f, 0.12f, 0.12f };
@@ -176,7 +182,7 @@ void Graphics::HierarchicalUpdate2(double dt) {
 
 	// === VENUS ===
 	speed = { .35f, .35f, .35f };
-	dist = { 3.5f, 0.f, 3.5f };
+	dist = { -3.5f, 0.f, 3.5f };
 	rotVec = { 0.f, 1.f, 0.f };
 	rotSpeed = { -0.1f };
 	scale = { 0.26f, 0.26f, 0.26f };
@@ -191,7 +197,7 @@ void Graphics::HierarchicalUpdate2(double dt) {
 
 	// === EARTH ===
 	speed = { .2f, .2f, .2f };
-	dist = { 6.f, 0.f, 6.f };
+	dist = { -6.f, 0.f, 6.f };
 	rotVec = { 0.f, 1.f, 0.f };
 	rotSpeed = { .2f };
 	scale = { 0.3f, 0.3f, 0.3f };
@@ -220,13 +226,106 @@ void Graphics::HierarchicalUpdate2(double dt) {
 	modelStack.pop();  // back to Earth
 	modelStack.pop();  // back to Sun
 
+	// === MARS ===
+	speed = { .16f, .16f, .16f };
+	dist = { 8.f, 0.f, -8.f };
+	rotVec = { 0.f, 1.f, 0.f };
+	rotSpeed = { .2f };
+	scale = { 0.15f, 0.15f, 0.15f };
+	ComputeTransforms(dt, speed, dist, rotSpeed, rotVec, scale, tmat, rmat, smat);
+	localTransform = modelStack.top() * tmat;
+	modelStack.push(localTransform);
+	localTransform *= rmat;
+	localTransform *= smat;
+	if (m_mars) m_mars->Update(localTransform);
+
+	modelStack.pop(); // back to sun
+
+	// === JUPITER ===
+	speed = { .15f, .15f, .15f };
+	dist = { -11.f, 0.f, 11.f };
+	rotVec = { 0.f, 1.f, 0.f };
+	rotSpeed = { .2f };
+	scale = { 0.6f, 0.6f, 0.6f };
+	ComputeTransforms(dt, speed, dist, rotSpeed, rotVec, scale, tmat, rmat, smat);
+	localTransform = modelStack.top() * tmat;
+	modelStack.push(localTransform);
+	localTransform *= rmat;
+	localTransform *= smat;
+	if (m_jupiter) m_jupiter->Update(localTransform);
+
+	modelStack.pop(); // back to sun
 
 
+	// === SATURN ===
+	speed = { .12f, .12f, .12f };
+	dist = { 14.f, 0.f, -14.f };
+	rotVec = { 0.f, 1.f, 0.f };
+	rotSpeed = { .2f };
+	scale = { 0.5f, 0.5f, 0.5f };
+	ComputeTransforms(dt, speed, dist, rotSpeed, rotVec, scale, tmat, rmat, smat);
+	localTransform = modelStack.top() * tmat;
+	modelStack.push(localTransform);
+	localTransform *= rmat;
+	localTransform *= smat;
+	if (m_saturn) m_saturn->Update(localTransform);
+
+	localTransform = modelStack.top();
+	if (m_ring) m_ring->SetModelMatrix(localTransform);
+
+
+	modelStack.pop(); // back to sun
 	
+	// === URANUS ===
+	speed = { .1f, .1f, .1f };
+	dist = { -16.f, 0.f, 16.f };
+	rotVec = { 0.f, 1.f, 0.f };
+	rotSpeed = { .3f };
+	scale = { 0.37f, 0.37f, 0.37f };
+	ComputeTransforms(dt, speed, dist, rotSpeed, rotVec, scale, tmat, rmat, smat);
+	localTransform = modelStack.top() * tmat;
+	modelStack.push(localTransform);
+	localTransform *= rmat;
+	localTransform *= smat;
+	if (m_uranus) m_uranus->Update(localTransform);
+
+	modelStack.pop(); // back to sun
+
+	// === NEPTUNE ===
+	speed = { .1f, .1f, .1f };
+	dist = { 18.f, 0.f, -18.f };
+	rotVec = { 0.f, 1.f, 0.f };
+	rotSpeed = { .3f };
+	scale = { 0.35f, 0.35f, 0.35f };
+	ComputeTransforms(dt, speed, dist, rotSpeed, rotVec, scale, tmat, rmat, smat);
+	localTransform = modelStack.top() * tmat;
+	modelStack.push(localTransform);
+	localTransform *= rmat;
+	localTransform *= smat;
+	if (m_neptune) m_neptune->Update(localTransform);
+
+	modelStack.pop(); // back to sun
+
+	// === COMET ===
+	speed = { .4f, .4f, .4f };
+	dist = { 19.0f, 12.f, 19.f };
+	rotVec = { 0.f, 1.f, 0.f };
+	rotSpeed = { .1f };
+	scale = { 0.1f, 0.1f, 0.1f };
+	localTransform = modelStack.top();
+	localTransform *= rotate(glm::mat4(1.f), glm::radians(45.0f), glm::vec3(1.0f, 0.0f, 1.0f));
+	ComputeTransforms(dt, speed, dist, rotSpeed, rotVec, scale, tmat, rmat, smat);
+	localTransform *= tmat;
+	localTransform *= rmat;
+	localTransform *= smat;
+	if (m_comet) m_comet->Update(localTransform);
+
+
 	modelStack.pop(); // empty stack
 
 	m_user->UpdateDT();
 	m_user->MoveForward();
+
 }
 
 
@@ -335,10 +434,11 @@ void Graphics::Render()
 		glUniform1i(m_hasNormalMap, false); // Assuming ship has no normal map
 		m_user->getMesh()->Render(m_positionAttrib, m_normalAttrib, m_tcAttrib, m_hasTexture, m_hasNormalMap);
 	}
-
+	
 	// === Render sky (space sphere) ===
 	if (m_space)
 	{
+		glUniform1i(m_shader->GetUniformLocation("useInstancing"), 0);
 		glUniform1i(m_shader->GetUniformLocation("isEmitter"), 1);
 		glm::mat4 model = m_space->GetModel();
 		glm::mat4 view = cam->GetView();
@@ -391,6 +491,35 @@ void Graphics::Render()
 		SetMaterial(m_sunMat);
 		m_sun->Render(m_positionAttrib, m_normalAttrib, m_tcAttrib, m_hasTexture, m_hasNormalMap);
 	}
+	if (m_ring)
+	{
+		glm::mat4 model = m_ring->GetModelMatrix();
+		glm::mat4 view = cam->GetView();
+		glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(view * model)));
+
+		glUniform1i(m_shader->GetUniformLocation("isEmitter"), 1);
+		glUniformMatrix4fv(m_modelMatrix, 1, GL_FALSE, glm::value_ptr(model));
+		glUniformMatrix3fv(m_normalMatrix, 1, GL_FALSE, glm::value_ptr(normalMatrix));
+
+		if (m_ring->getHasTex())
+		{
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, m_sun->getTextureID());
+			glUniform1i(m_shader->GetUniformLocation("sp"), 0);
+			glUniform1i(m_shader->GetUniformLocation("hasTexture"), 1);
+		}
+		else
+		{
+			glUniform1i(m_shader->GetUniformLocation("hasTexture"), 0);
+		}
+
+		glUniform1i(m_shader->GetUniformLocation("hasNormalMap"), 0); // no normal map
+		SetMaterial(m_sunMat);
+		m_ring->Render(m_positionAttrib, m_normalAttrib, m_tcAttrib, m_hasTexture);
+	}
+
+
+
 	glUniform1i(m_shader->GetUniformLocation("isEmitter"), 0);
 	
 	// === Render Mercury ===
@@ -402,8 +531,26 @@ void Graphics::Render()
 	// === Render Earth ===
 	RenderPlanets(m_earth);
 
-	//Moon
+	// === Render Moon ===
 	RenderPlanets(m_moon);
+
+	// === Render Mars ===
+	RenderPlanets(m_mars);
+
+	// === Render Jupiter ===
+	RenderPlanets(m_jupiter);
+
+	// === Render Saturn ===
+	RenderPlanets(m_saturn);
+
+	// === Render Uranus ===
+	RenderPlanets(m_uranus);
+
+	// === Render Neptune ===
+	RenderPlanets(m_neptune);
+	
+	// === Render Comet ===
+	RenderPlanets(m_comet);
 
 	// === Error checking ===
 	GLenum error = glGetError();

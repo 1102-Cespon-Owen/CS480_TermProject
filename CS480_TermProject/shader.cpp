@@ -123,9 +123,14 @@ bool Shader::AddShader(GLenum ShaderType)
 
                 void main()
                 {
-
-
-                    vec3 normal = normalize(varNorm);
+                    vec3 normal;
+                    if(hasNormalMap){
+                        vec3 N = texture(normalMap, tc).xyz*2-1;
+                        normal = normalize(varNorm + N * 2.0);
+                    }
+                    else{
+                        normal = normalize(varNorm);
+                    }
                     vec3 lightDir = normalize(lightPos - varPos);
                     vec3 viewDir = normalize(viewPos - varPos);
                     vec3 reflectDir = reflect(-lightDir, normal);
@@ -148,12 +153,6 @@ bool Shader::AddShader(GLenum ShaderType)
                     }
                 }
             )";
-            // changed vec4 ambient: vec4 ambient = light.ambient * material.ambient; 
-           //Added the gammaCorrected above, replaced frag_color with, frag_color = ambient + diffuse + specular;frag_color = ambient + diffuse + specular;
-           //GAMMA CORRECTION: brightens up the screen to help see
-           
-
-           //ISSUE there are no shadows
 
     }
 

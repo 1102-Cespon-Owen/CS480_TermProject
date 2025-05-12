@@ -56,6 +56,7 @@ Mesh::Mesh(glm::vec3 pivot, const char* fname, const char* tname)
 		hasTex = true;
 	else
 		hasTex = false;
+	hasNormal = false;
 }
 
 
@@ -75,6 +76,11 @@ glm::mat4 Mesh::GetModel()
 {
 	return model;
 }
+
+void Mesh::bind() const {
+	glBindVertexArray(vao);
+}
+
 
 void Mesh::Render(GLint posAttribLoc, GLint colAttribLoc)
 {

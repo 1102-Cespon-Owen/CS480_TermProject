@@ -23,8 +23,15 @@ public:
     bool loadModelFromFile(const char* path);
 
     bool hasTex;
+    bool hasNormal;
     GLuint getTextureID() { return m_texture->getTextureID(); }
-
+    GLuint getNormalTextureID() { return m_texture->getNormalTextureID(); }
+    void bind() const;
+    unsigned int getIndexCount() { return Indices.size(); }
+    GLuint getVAO() { return vao; }
+    GLuint getIndexBuffer() { return IB; }
+    bool hasTexture() { return hasTex; }
+    bool hasNormalMap() { return hasNormal; }
 
 
 private:

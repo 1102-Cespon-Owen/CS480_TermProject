@@ -13,6 +13,8 @@ using namespace std;
 #include "mesh.h"
 #include "light.h"
 #include "user.h"
+#include "AsteroidBelt.h"
+#include "ring.h"
 
 
 #define numVBOs 2;
@@ -97,11 +99,19 @@ class Graphics
 
 	//NEPTUNE
     Sphere* m_neptune;
+
+    //RING
+    Ring* m_ring;
+
+    //COMET
+    Sphere* m_comet;
 	
 
     //STARSHIP
     Mesh* m_ship;
 
+    Mesh* asteroid;
+    AsteroidBelt* asteroidBelt;
 
     //NEW
 	User* m_user;
